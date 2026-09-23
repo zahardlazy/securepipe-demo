@@ -20,9 +20,9 @@ jobs:
 
   semgrep:
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
+      - name: Install Semgrep
+        run: pip install semgrep
       - name: Semgrep - SAST scan
         run: semgrep scan --config auto --error
