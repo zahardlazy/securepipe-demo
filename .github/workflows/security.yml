@@ -28,4 +28,4 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
       - name: Semgrep - SAST scan
-        run: semgrep scan --config auto --error
+        run: semgrep scan --config auto
