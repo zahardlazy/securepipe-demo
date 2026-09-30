@@ -1,0 +1,58 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.74.0"
+  },
+  "ReportID": "01a0f32b-4fed-7a3d-b4cf-587c1f510cc3",
+  "CreatedAt": "2026-10-01T00:34:57.1336711+08:00",
+  "ArtifactID": "sha256:f0a05b28808302c20ba1b3bd66728bb0ca887bf33a6b9e78a192cad849f7fbe7",
+  "ArtifactName": ".",
+  "ArtifactType": "repository",
+  "Metadata": {
+    "RepoURL": "https://github.com/zahardlazy/securepipe-demo.git",
+    "Branch": "feat/sprint1-finish",
+    "Commit": "b4241df886912a24ef48e0c2bdbc363af4b04b24",
+    "CommitMsg": "Merge pull request #9 from zahardlazy/feat/hieu-week1\n\nFeat/hieu week1",
+    "Author": "HiPuhuc \u003cdohuyphuc0@gmail.com\u003e",
+    "Committer": "GitHub \u003cnoreply@github.com\u003e"
+  },
+  "Results": [
+    {
+      "Target": "requirements.txt",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Packages": [
+        {
+          "Name": "flask",
+          "Identifier": {
+            "PURL": "pkg:pypi/flask@3.0.3",
+            "UID": "2f6ebe36676ebe6a"
+          },
+          "Version": "3.0.3",
+          "Locations": [
+            {
+              "StartLine": 1,
+              "EndLine": 1
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "requests",
+          "Identifier": {
+            "PURL": "pkg:pypi/requests@2.19.1",
+            "UID": "c17d48c935a20493"
+          },
+          "Version": "2.19.1",
+          "Locations": [
+            {
+              "StartLine": 4,
+              "EndLine": 4
+            }
+          ],
+          "AnalyzedBy": "pip"
+        }
+      ]
+    }
+  ]
+}
