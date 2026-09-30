@@ -160,3 +160,17 @@ Finding "cần sửa": `app.run(host="0.0.0.0")` — bad practice thật, chuy�
 3. **Ruleset mặc định không đủ.** `p/owasp-top-ten` bỏ sót SQL injection — phải kiểm chứng bằng lỗi đã cài.
 4. **File rỗng vẫn "tồn tại".** `docs/*.txt` = 0 byte trông như đã làm xong. Phải kiểm tra nội dung, không chỉ sự tồn tại.
 5. **PR đóng không merge là mất mát thật.** Công của Hieu (tuần này) suýt mất hoàn toàn.
+6. **Gitleaks có allowlist mặc định — đừng dùng key ví dụ trong tài liệu.**
+
+   Lần đầu viết self-test, tao dùng `AKIAIOSFODNN7EXAMPLE` (key mẫu trong tài liệu AWS). Kết quả: `gitleaks detect` trả **exit 0** — không bắt. Nếu giữ nguyên, job self-test sẽ **fail sai lý do** và pipeline đỏ dù detector hoàn toàn khoẻ.
+
+   | Key | Kết quả |
+   |---|---|
+   | `AKIAIOSFODNN7EXAMPLE` | exit 0 — **KHÔNG bắt** (allowlist mặc định) |
+   | `AKIA` + `ZZ7XQ2WPLMN4RTUV` | exit 1 — **bắt** ✓ |
+   | `ghp_AAAA...` (GitHub PAT) | exit 0 — không bắt theo pattern này |
+   | `xoxb-...` (Slack token) | exit 1 — bắt ✓ |
+
+   **Bài học:** khi viết self-test cho scanner, phải **kiểm chứng key mẫu thật sự bị bắt** trước. Đừng giả định "key trông giống secret thì sẽ bị bắt".
+
+7. **Luôn test 2 chiều.** Một chiều "push sạch → xanh" không đủ — phải chứng minh "push có secret → đỏ". Nếu chỉ test một chiều, allowlist che hết secret vẫn cho ra "xanh" và ta tưởng mọi thứ ổn.

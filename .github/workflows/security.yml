@@ -42,6 +42,14 @@ jobs:
       # Tu-kiem-tra: chung minh detector THUC SU bat duoc secret.
       # Tao 1 file chua secret gia, chay gitleaks, KY VONG exit 1.
       # Neu detector hong (exit 0) thi job nay fail — khong the "xanh gia".
+      #
+      # LUU Y 1: KHONG dung key vi du trong tai lieu AWS (dang "AKIA" + "IOSFODNN7EXAMPLE").
+      #   Key do nam trong allowlist MAC DINH cua gitleaks -> tra ve exit 0
+      #   -> job nay fail SAI LY DO. Da kiem chung cuc bo voi gitleaks 8.30.1.
+      #
+      # LUU Y 2: key duoc GHEP LUC CHAY, khong viet literal trong repo.
+      #   Neu viet literal, chinh pre-commit hook cua repo (gitleaks protect --staged)
+      #   se chan commit nay. Ghep chuoi giu nguyen hanh vi test ma khong luu secret.
       - name: Self-test - detector must catch a planted secret
         run: |
           set +e
@@ -49,10 +57,8 @@ jobs:
             https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           mkdir -p /tmp/selftest
-          cat > /tmp/selftest/planted.py <<'EOF'
-          AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
-          AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-          EOF
+          KEY="AKIA""ZZ7XQ2WPLMN4RTUV"
+          printf 'AWS_ACCESS_KEY_ID = "%s"\n' "$KEY" > /tmp/selftest/planted.py
           /tmp/gitleaks detect --source /tmp/selftest --no-git --config .gitleaks.toml --redact
           rc=$?
           echo "gitleaks exit code = $rc (ky vong: 1)"
