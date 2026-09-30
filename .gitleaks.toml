@@ -3,9 +3,15 @@ title = "SecurePipe Gitleaks config"
 [extend]
 useDefault = true
 
+# Allowlist CHI ap dung cho file output cua scanner (khong chua secret that).
+# TUYET DOI KHONG allowlist theo duong dan source code (app/) — lam vay se vo hieu hoa
+# chinh muc dich cua secret detection (day la bug cua ban truoc, xem docs/false-positives.md).
+#
+# Cac finding DA BIET trong source code duoc liet ke theo FINGERPRINT trong
+# .gitleaksignore — khong phai theo path.
 [allowlist]
-description = "Local scan output files + demo app intentional fake secrets for scanner testing"
+description = "Scanner output files only — never source code"
 paths = [
-  '''docs/.*scan.*\.txt''',
-  '''app/app\.py''',
+  '''docs/.*\.(json|sarif)$''',
+  '''gitleaks-report\.json$''',
 ]

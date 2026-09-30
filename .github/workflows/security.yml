@@ -6,18 +6,76 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+# ======================================================================
+# Stage 1-2 pipeline — Sprint 2 Week 1
+#
+# CHE DO HIEN TAI: DETECT + REPORT (khong chan).
+# Ly do: demo app CO Y chua loi (xem app/app.py [SEEDED #1..#3]) de chung minh
+# scanner hoat dong. Neu bat --error / exit-code=1 ngay bay gio thi MOI lan
+# push deu do — khong phan biet duoc "push sach" voi "push co loi".
+#
+# ENFORCEMENT (Quality Gate: Critical -> fail) la task Sprint 2 Week 3
+# (Mlo Tay: "Integrate Security Quality Gate logic"). Luc do se bat lai.
+# ======================================================================
+
 jobs:
+  # ----------------------------------------------------------------
+  # Stage 1 — Secret detection
+  # ----------------------------------------------------------------
   gitleaks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # Job nay CHAN: phat hien secret moi (ngoai .gitleaksignore) => fail.
+      # Day chinh la done-when Week 1: "push with fake secret -> failed run".
       - name: Gitleaks - secret detection
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Tu-kiem-tra: chung minh detector THUC SU bat duoc secret.
+      # Tao 1 file chua secret gia, chay gitleaks, KY VONG exit 1.
+      # Neu detector hong (exit 0) thi job nay fail — khong the "xanh gia".
+      - name: Self-test - detector must catch a planted secret
+        run: |
+          set +e
+          curl -sSL -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          mkdir -p /tmp/selftest
+          cat > /tmp/selftest/planted.py <<'EOF'
+          AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+          AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+          EOF
+          /tmp/gitleaks detect --source /tmp/selftest --no-git --config .gitleaks.toml --redact
+          rc=$?
+          echo "gitleaks exit code = $rc (ky vong: 1)"
+          if [ "$rc" -ne 1 ]; then
+            echo "::error::Detector KHONG bat duoc secret da cai — pipeline bao xanh gia!"
+            exit 1
+          fi
+          echo "OK: detector bat duoc secret nhu thiet ke."
+
+  trufflehog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog - verified secret detection
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified --results=verified,unknown
+
+  # ----------------------------------------------------------------
+  # Stage 2 — SAST + SCA
+  # ----------------------------------------------------------------
   semgrep:
     runs-on: ubuntu-latest
     steps:
@@ -28,4 +86,46 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
       - name: Semgrep - SAST scan
-        run: semgrep scan --config p/owasp-top-ten
+        # --config auto: bat day du (ke ca SQLi trong app.py dong 35).
+        # Truoc day dung p/owasp-top-ten — ruleset do KHONG bat duoc SQLi da seed.
+        # Chua dung --error: xem ghi chu ENFORCEMENT o dau file.
+        run: |
+          semgrep scan \
+            --config auto \
+            --sarif --output semgrep-results.sarif \
+            --json --output semgrep-results.json
+        continue-on-error: true
+      - name: Show finding summary
+        if: always()
+        run: |
+          if [ -f semgrep-results.json ]; then
+            python3 -c "import json;d=json.load(open('semgrep-results.json'));print('Semgrep findings:',len(d.get('results',[])))"
+          fi
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: semgrep-results.sarif
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy - SCA scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          trivyignores: .trivyignore
+          exit-code: '0' # report-only o Week 1; bat '1' o Week 3
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sarif
+          path: trivy-results.sarif

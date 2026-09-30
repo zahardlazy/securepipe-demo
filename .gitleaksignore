@@ -1,0 +1,12 @@
+# Gitleaks ignore list — FINGERPRINT cua tung finding da biet va da chap nhan.
+# Format: <file>:<rule-id>:<line>
+#
+# KHONG dung file nay de che secret that. Moi dong phai co ly do.
+#
+# [SEEDED #1] Demo app co y cai secret gia de test Gitleaks/TruffleHog.
+#   Day la AWS PUBLIC example key, khong phai credential that.
+#   Muc dich: chung minh scanner BAT DUOC secret khi push.
+#   Xem: app/app.py dong 10-11, comment "[SEEDED #1]".
+#   Neu secret nay bi xoa khoi app.py, HAY XOA 2 dong duoi day.
+app/app.py:aws-access-token:10
+app/app.py:generic-api-key:11
