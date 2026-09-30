@@ -1,0 +1,28 @@
+# Trivy ignore — moi CVE phai co ly do va ngay review.
+# Format: CVE-ID
+#
+# Tat ca entry duoi day la CVE cua dependency CO Y CAI (seeded) trong demo app,
+# muc dich de chung minh Trivy SCA hoat dong. Khong phai false positive.
+# Xem: requirements.txt, comment "[SEEDED #2]".
+#
+# Review lai: 2026-10-08 (truoc Sprint 2 review)
+
+# flask 3.0.3 -> 3.1.3 (LOW, information disclosure via session caching)
+# Ly do: chua nang cap de giu demo on dinh; se xu ly o Sprint 3
+CVE-2026-27205
+
+# requests 2.19.1 -> 2.20.0 (HIGH, HTTPS->HTTP redirect leak Authorization header)
+# Ly do: day chinh la CVE duoc seed [SEEDED #2]; muc tieu cua Trivy demo
+CVE-2018-18074
+
+# requests 2.19.1 -> 2.31.0 (MEDIUM, Proxy-Authorization leak on redirect)
+CVE-2023-32681
+
+# requests 2.19.1 -> 2.32.0 (MEDIUM, cert verification skipped on same host)
+CVE-2024-35195
+
+# requests 2.19.1 -> 2.32.4 (MEDIUM, .netrc credentials leak via malicious URL)
+CVE-2024-47081
+
+# requests 2.19.1 -> 2.33.0 (MEDIUM, predictable temp file)
+CVE-2026-25645

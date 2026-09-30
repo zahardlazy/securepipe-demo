@@ -1,0 +1,15 @@
+# Semgrep ignore — moi entry PHAI co ly do.
+# Format: gitignore-style pattern.
+#
+# LUU Y: ignore theo DUONG DAN chi dung cho file khong phai source code.
+# Cac finding DA BIET trong source code duoc xu ly bang --config auto (bat day du)
+# va ghi nhan trong docs/false-positives.md, KHONG che bang ignore.
+
+# Scanner output — khong phai code
+*.sarif
+*.json
+
+# Moi truong ao
+.venv/
+venv/
+__pycache__/
