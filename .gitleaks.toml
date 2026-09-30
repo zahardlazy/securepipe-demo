@@ -1,15 +1,11 @@
 title = "SecurePipe Gitleaks config"
 
-
 [extend]
 useDefault = true
 
 [allowlist]
-description = "local scan output files"
+description = "Local scan output files + demo app intentional fake secrets for scanner testing"
 paths = [
   '''docs/.*scan.*\.txt''',
-]
-description = "Demo app contains INTENTIONAL fake secrets for scanner testing (non-existent keys)"
-paths = [
   '''app/app\.py''',
 ]
