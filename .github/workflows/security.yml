@@ -120,8 +120,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy - SCA scan
-        # FIX 01/10: tag 0.28.0 KHONG ton tai (tag that la v0.28.0) → job fail "Set up job".
-        uses: aquasecurity/trivy-action@v0.28.0
+        # FIX 01/10 (lan 2): v0.28.0 ben trong goi aquasecurity/setup-trivy@v0.2.1 —
+        # tag DO khong ton tai nua (bi gho khoi upstream) -> van fail "Set up job".
+        # v0.36.0 dung setup-trivy pin theo hash (3fb12ec, v0.2.6) — da verify action.yaml.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
