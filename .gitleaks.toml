@@ -1,0 +1,10 @@
+title = "SecurePipe Gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "local scan output files"
+paths = [
+  '''docs/.*scan.*\.txt''',
+]
