@@ -1,0 +1,11 @@
+{
+  "tool": "TruffleHog",
+  "version": "3.97.9",
+  "mode": "git full history, --only-verified",
+  "command": "trufflehog git file://. --only-verified --json",
+  "generated": "2026-10-01",
+  "returncode": 0,
+  "findings": 0,
+  "note": "0 verified finding la ket qua DUNG: cac key trong repo la key gia (AWS public example, khong hoat dong), khong the verify voi AWS. TruffleHog chi bao secret da xac minh con song.",
+  "results": []
+}

@@ -91,15 +91,16 @@ jobs:
           python-version: '3.11'
       - name: Install Semgrep
         run: pip install semgrep
-      - name: Semgrep - SAST scan
+      - name: Semgrep - SAST scan (SARIF)
         # --config auto: bat day du (ke ca SQLi trong app.py dong 35).
         # Truoc day dung p/owasp-top-ten — ruleset do KHONG bat duoc SQLi da seed.
         # Chua dung --error: xem ghi chu ENFORCEMENT o dau file.
-        run: |
-          semgrep scan \
-            --config auto \
-            --sarif --output semgrep-results.sarif \
-            --json --output semgrep-results.json
+        # FIX 01/10: semgrep KHONG cho dung --output 2 lan trong 1 lenh
+        # (exit 2: "option '--output' cannot be repeated") → tach 2 lan chay.
+        run: semgrep scan --config auto --sarif --output semgrep-results.sarif
+        continue-on-error: true
+      - name: Semgrep - SAST scan (JSON)
+        run: semgrep scan --config auto --json --output semgrep-results.json
         continue-on-error: true
       - name: Show finding summary
         if: always()
@@ -119,7 +120,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy - SCA scan
-        uses: aquasecurity/trivy-action@0.28.0
+        # FIX 01/10: tag 0.28.0 KHONG ton tai (tag that la v0.28.0) → job fail "Set up job".
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           scan-type: fs
           scan-ref: .

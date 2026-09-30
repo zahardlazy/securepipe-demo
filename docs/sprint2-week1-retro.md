@@ -174,3 +174,28 @@ Finding "cần sửa": `app.run(host="0.0.0.0")` — bad practice thật, chuy�
    **Bài học:** khi viết self-test cho scanner, phải **kiểm chứng key mẫu thật sự bị bắt** trước. Đừng giả định "key trông giống secret thì sẽ bị bắt".
 
 7. **Luôn test 2 chiều.** Một chiều "push sạch → xanh" không đủ — phải chứng minh "push có secret → đỏ". Nếu chỉ test một chiều, allowlist che hết secret vẫn cho ra "xanh" và ta tưởng mọi thứ ổn.
+
+---
+
+## Phụ lục — Fix CI run #36746789965 (01/10, sau retro)
+
+Run trên `feat/sprint1-finish` (commit 846ce77) fail với 2 lỗi thật, được phát hiện qua GitHub API annotations:
+
+| Job | Triệu chứng | Nguyên nhân gốc | Fix
+|---|---|---|---|
+| `trivy` | Fail ngay bước "Set up job" | `aquasecurity/trivy-action@0.28.0` — tag **không tồn tại** (tag thật là `v0.28.0`, có chữ `v`) | Đổi sang `@v0.28.0` (đã xác minh tag tồn tại qua GitHub API) |
+| `semgrep` | Job "success" nhưng scan exit 2, SARIF rỗng — bị `continue-on-error` che | Lệnh dùng `--sarif --output` **và** `--json --output` trong cùng 1 lệnh — semgrep không cho lặp `--output` (đã tái hiện local: `option '--output' cannot be repeated`) | Tách thành 2 step riêng: 1 SARIF, 1 JSON |
+
+**Bài học thêm:**
+
+8. **Job "success" chưa chắc làm đúng việc.** `continue-on-error: true` + step upload artifact `if: always()` khiến job semgrep xanh dù scan chưa chạy. Phải đọc annotations/log, không chỉ nhìn conclusion.
+9. **Pin version action thì phải verify tag tồn tại.** `0.28.0` vs `v0.28.0` — một ký tự làm cả job fail từ "Set up job". Khi pin, kiểm tra tag qua API hoặc fetch `action.yml` từ tag đó.
+
+**Kiểm chứng local lần cuối (01/10, gitleaks 8.30.1 + trufflehog 3.97.9 trên Windows):**
+
+| Điều kiện | Kết quả |
+|---|---|
+| `gitleaks detect` với `.gitleaksignore` | 15 commits, **0 finding**, exit 0 |
+| Bỏ `.gitleaksignore` | **2 finding**, exit 1 — detector bắt thật |
+| `gitleaks protect --staged` (mô phỏng pre-commit, file planted) | **1 finding, exit 1** — hook chặn commit như thiết kế |
+| `trufflehog git file://. --only-verified` | **0 verified** (đúng: key giả không verify được với AWS) — report: `docs/trufflehog-local-scan.json` |
