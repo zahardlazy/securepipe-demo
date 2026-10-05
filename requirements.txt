@@ -1,4 +1,4 @@
-﻿flask==3.0.3
+flask==3.0.3
 # [SEEDED #2] Outdated dependency with known CVE - target for Trivy SCA
 # CVE-2018-18074: credential leak on http->https redirect
 requests==2.19.1
