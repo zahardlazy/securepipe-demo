@@ -139,3 +139,12 @@ jobs:
         with:
           name: trivy-sarif
           path: trivy-results.sarif
+  syft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syft - SBOM generation
+        uses: anchore/sbom-action@v0.17.0
+        with:
+          format: cyclonedx-json
+          artifact-name: sbom-report
