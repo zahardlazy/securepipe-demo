@@ -11,9 +11,6 @@
 # Ly do: chua nang cap de giu demo on dinh; se xu ly o Sprint 3
 CVE-2026-27205
 
-# requests 2.19.1 -> 2.20.0 (HIGH, HTTPS->HTTP redirect leak Authorization header)
-# Ly do: day chinh la CVE duoc seed [SEEDED #2]; muc tieu cua Trivy demo
-CVE-2018-18074
 
 # requests 2.19.1 -> 2.31.0 (MEDIUM, Proxy-Authorization leak on redirect)
 CVE-2023-32681
