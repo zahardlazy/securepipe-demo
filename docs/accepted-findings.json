@@ -27,6 +27,21 @@
       "fingerprint": "Dockerfile:dockerfile.security.missing-user.missing-user:12",
       "reason": "Image chay voi root (Dockerfile cua Phuc, PR #17, 16/10). Quick win Sprint 3: them USER. Khong sua ngay de giu smoke-test Build Image vua xanh on dinh.",
       "review_by": "2026-10-22"
+    },
+    {
+      "fingerprint": "app/app.py:python.flask.security.injection.tainted-sql-string.tainted-sql-string:35",
+      "reason": "[SEEDED #3 - bonus for SAST] SQL injection CO Y (f-string + request.args, xem comment dong 24) — vat lieu demo Semgrep. Finding nay ton tai tu truoc nhung TANG VINH do app.py co UTF-8 BOM lam semgrep khong parse duoc file; BOM da duoc Phuc go bo trong PR #25 (BUG-003) nen rule python.* bat dau match. Chua vao baseline ngay 17/10 sau khi gate chan PR #25 (dung hanh vi).",
+      "review_by": "2026-10-23"
+    },
+    {
+      "fingerprint": "app/app.py:python.django.security.injection.tainted-sql-string.tainted-sql-string:35",
+      "reason": "[SEEDED #3] Cung dong SQL injection nhu flask rule (rule django danh sai framework nhung van la 1 loi that o dong 35). Chi tich xem entry flask phia tren. Mot finding thuc te = 3 rule cung bao —KHONG duoc loai Trung lap de mat tin gap (finding phai nhin thay duoc).",
+      "review_by": "2026-10-23"
+    },
+    {
+      "fingerprint": "app/app.py:python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query:35",
+      "reason": "[SEEDED #3] Cung dong SQL injection nhu flask rule (goc nhin cua rule sqlalchemy: raw query). Chi tich xem entry flask phia tren.",
+      "review_by": "2026-10-23"
     }
   ]
 }
