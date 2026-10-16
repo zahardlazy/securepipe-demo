@@ -1,0 +1,23 @@
+name: Build Image
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t securepipe-demo:${{ github.sha }} .
+
+      - name: Health check inside container
+        run: |
+          docker run -d -p 5000:5000 --name smoke-test securepipe-demo:${{ github.sha }}
+          sleep 5
+          curl -f http://localhost:5000/health
+          docker logs smoke-test
+          docker stop smoke-test && docker rm smoke-test
