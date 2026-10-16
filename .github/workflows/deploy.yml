@@ -1,0 +1,42 @@
+name: Deploy to ECS (Stage 5)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-production
+
+jobs:
+  deploy:
+    name: Deploy to ECS Fargate (gated)
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ap-southeast-1
+      ECS_CLUSTER: securepipe-cluster
+      ECS_SERVICE: securepipe-demo-svc
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::521827759641:role/securepipe-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force ECS to pull latest image
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment \
+            --region "$AWS_REGION"
+
+      - name: Wait for service stable
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --region "$AWS_REGION"
