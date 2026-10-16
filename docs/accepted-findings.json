@@ -1,0 +1,32 @@
+{
+  "_doc": [
+    "Baseline cho Security Quality Gate (Sprint 2 W3, Mlo Tay).",
+    "Moi entry la 1 finding Semgrep severity ERROR da duoc TRIAGE (chap nhan",
+    "kem ly do). Finding VAN HIEN trong scan output (nguyen tac cua repo:",
+    "finding phai nhin thay duoc) nhung KHONG lam gate fail.",
+    "",
+    "Fingerprint format: <path>:<rule-id>:<line> — giong .gitleaksignore.",
+    "Neu dong code di chuyen thi fingerprint doi -> gate se bat lai -> phai",
+    "re-triage. Day la hanh vi DUNG (chan finding moi gia danh finding cu).",
+    "",
+    "QUY TRINH them entry: kem LY DO cu the + ngay review lai (review_by).",
+    "Nguoi review: Mlo Tay. Doc lien quan: docs/false-positives-week3.md."
+  ],
+  "semgrep_error_findings": [
+    {
+      "fingerprint": "app/app.py:generic.secrets.security.detected-aws-access-key-id-value.detected-aws-access-key-id-value:10",
+      "reason": "[SEEDED #1] secret gia de test scanner. Gia tri that da bi redacted tuan truoc (github push protection), hien la placeholder — rule van match theo ten bien AWS_ACCESS_KEY_ID. Khong phai credential that.",
+      "review_by": "2026-10-22"
+    },
+    {
+      "fingerprint": "app/app.py:generic.secrets.security.detected-aws-secret-access-key.detected-aws-secret-access-key:11",
+      "reason": "[SEEDED #1] secret gia (AWS public example format, khong hoat dong) de chung minh Gitleaks/Semgrep/TruffleHog bat duoc secret. Xoa khoi app.py khi het nhu cau demo.",
+      "review_by": "2026-10-22"
+    },
+    {
+      "fingerprint": "Dockerfile:dockerfile.security.missing-user.missing-user:12",
+      "reason": "Image chay voi root (Dockerfile cua Phuc, PR #17, 16/10). Quick win Sprint 3: them USER. Khong sua ngay de giu smoke-test Build Image vua xanh on dinh.",
+      "review_by": "2026-10-22"
+    }
+  ]
+}

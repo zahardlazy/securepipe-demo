@@ -5,20 +5,33 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: {} # de chay tay khi demo / khi can verify lai ma khong can push
 
 permissions:
   contents: read
 
 # ======================================================================
-# Stage 1-2 pipeline — Sprint 2 Week 1
+# SecurePipe pipeline — Stage 1-4 + supply chain — Sprint 2
 #
-# CHE DO HIEN TAI: DETECT + REPORT (khong chan).
-# Ly do: demo app CO Y chua loi (xem app/app.py [SEEDED #1..#3]) de chung minh
-# scanner hoat dong. Neu bat --error / exit-code=1 ngay bay gio thi MOI lan
-# push deu do — khong phan biet duoc "push sach" voi "push co loi".
+# Stage 1 — Secret detection : gitleaks (CHAN), trufflehog (CHAN verified)
+# Stage 2 — SAST + SCA       : semgrep, trivy (SARIF len Security tab)
+# Stage 3 — Build + sign     : build image -> GHCR -> cosign keyless
+#                              + SLSA v1.1 provenance attestation
+# Stage 4 — IaC scan         : checkov (report, soft-fail)
+# Gate   — Security Quality Gate: Critical -> FAIL (tu Week 3, Fri 16/10)
 #
-# ENFORCEMENT (Quality Gate: Critical -> fail) la task Sprint 2 Week 3
-# (Mlo Tay: "Integrate Security Quality Gate logic"). Luc do se bat lai.
+# LICH SU:
+# - Week 1: che do DETECT + REPORT. Ly do: demo app CO Y chua loi
+#   (app/app.py [SEEDED #1..#3]) de chung minh scanner hoat dong.
+# - Week 3 (16/10): bat ENFORCEMENT qua job quality-gate. Pipeline van
+#   XANH tren trang thai hien tai vi moi finding da co triage:
+#   .gitleaksignore (secret seeded), .trivyignore (CVE seeded),
+#   docs/accepted-findings.json (Semgrep ERROR da chap nhan).
+#   Finding MOI (chua triage) se lam gate DO — dung theo thiet ke.
+#
+# GHI CHU REGISTRY (16/10): image day len GHCR (khong phai ECR) vi repo
+# chua co IAM role OIDC -> AWS (infra cua The chua day len). Khi The xong
+# IAM role + ECR repo, xem docs/cosign-ghcr.md phan "Chuyen sang ECR".
 # ======================================================================
 
 jobs:
@@ -84,17 +97,24 @@ jobs:
   # ----------------------------------------------------------------
   semgrep:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # day SARIF len Security tab
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install Semgrep
-        run: pip install semgrep
+        # Pin 1.181.0 (16/10): phien ban da kiem chung cuc bo kem baseline
+        # docs/accepted-findings.json. Nang cap CO Y THI moi lan, kem re-triage.
+        # (Ho tro task Week 4: "Ruleset frozen for demo stability".)
+        run: pip install semgrep==1.181.0
       - name: Semgrep - SAST scan (SARIF)
         # --config auto: bat day du (ke ca SQLi trong app.py dong 35).
         # Truoc day dung p/owasp-top-ten — ruleset do KHONG bat duoc SQLi da seed.
-        # Chua dung --error: xem ghi chu ENFORCEMENT o dau file.
+        # Khong dung --error o day: enforcement do job quality-gate dam nhiem
+        # (semgrep --error khong phan biet finding da triage trong baseline).
         # FIX 01/10: semgrep KHONG cho dung --output 2 lan trong 1 lenh
         # (exit 2: "option '--output' cannot be repeated") → tach 2 lan chay.
         run: semgrep scan --config auto --sarif --output semgrep-results.sarif
@@ -108,18 +128,35 @@ jobs:
           if [ -f semgrep-results.json ]; then
             python3 -c "import json;d=json.load(open('semgrep-results.json'));print('Semgrep findings:',len(d.get('results',[])))"
           fi
-      - name: Upload Semgrep SARIF
+      # SARIF len GitHub Security tab — hoan thanh milestone W2 con thieu
+      # "Both tools' SARIF visible in GitHub Security tab" (16/10).
+      - name: Upload Semgrep SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
+      - name: Upload Semgrep SARIF (artifact)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: semgrep-sarif
           path: semgrep-results.sarif
+      - name: Upload Semgrep JSON (cho Quality Gate)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results-json
+          path: semgrep-results.json
 
   trivy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # day SARIF len Security tab
     steps:
       - uses: actions/checkout@v4
-      - name: Trivy - SCA scan
+      - name: Trivy - SCA scan (SARIF)
         # FIX 01/10 (lan 2): v0.28.0 ben trong goi aquasecurity/setup-trivy@v0.2.1 —
         # tag DO khong ton tai nua (bi gho khoi upstream) -> van fail "Set up job".
         # v0.36.0 dung setup-trivy pin theo hash (3fb12ec, v0.2.6) — da verify action.yaml.
@@ -132,13 +169,38 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL,HIGH,MEDIUM
           trivyignores: .trivyignore
-          exit-code: '0' # report-only o Week 1; bat '1' o Week 3
-      - name: Upload Trivy SARIF
+          exit-code: '0' # enforcement do job quality-gate dam nhiem
+      - name: Trivy - SCA scan (JSON cho Quality Gate)
+        # JSON nay da ap dung .trivyignore => nhung CVE o day deu la CHUA triage.
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: json
+          output: trivy-results.json
+          severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
+          exit-code: '0'
+      - name: Upload Trivy SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+      - name: Upload Trivy SARIF (artifact)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-sarif
           path: trivy-results.sarif
+      - name: Upload Trivy JSON (cho Quality Gate)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results-json
+          path: trivy-results.json
+
   syft:
     runs-on: ubuntu-latest
     steps:
@@ -148,3 +210,203 @@ jobs:
         with:
           format: cyclonedx-json
           artifact-name: sbom-report
+
+  # ----------------------------------------------------------------
+  # Stage 4 — IaC scan (Checkov) — Week 3 (Mon 13/10)
+  # Milestone Wed: "Checkov integrated into pipeline, outputs SARIF"
+  # ----------------------------------------------------------------
+  checkov:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # day SARIF len Security tab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Checkov
+        # Pin 3.3.29 (16/10): phien ban da kiem chung cuc bo tren infra/main.tf
+        # (xem docs/checkov-local-scan.json). Quan ly version giong semgrep.
+        run: pip install checkov==3.3.29
+      - name: Checkov - IaC scan (JSON + SARIF)
+        # -s (soft-fail): CHI BAO CAO, khong chan. Ly do: infra hien la
+        # placeholder cho The (xem infra/main.tf) + enforcement Checkov la
+        # quyet dinh cho Week 4/Sprint 3 khi infra that. Cac finding hien tai
+        # deu da triage trong docs/false-positives-week3.md.
+        # Checkov scan tinh (khong can AWS credentials).
+        run: |
+          checkov --framework terraform -d infra -s \
+            -o json -o sarif \
+            --output-file-path checkov-results.json,checkov-results.sarif
+      - name: Show Checkov summary
+        if: always()
+        run: |
+          if [ -f checkov-results.json ]; then
+            python3 -c "import json;d=json.load(open('checkov-results.json'));r=d['results'];print('Checkov:',len(r.get('failed_checks',[])),'failed /',len(r.get('passed_checks',[])),'passed')"
+          fi
+      - name: Upload Checkov SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov
+      - name: Upload Checkov results (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-results
+          path: |
+            checkov-results.json
+            checkov-results.sarif
+
+  # ----------------------------------------------------------------
+  # Stage 3 — Build + push GHCR + Cosign keyless sign + SLSA provenance
+  # Week 3: Mon (sign post-build), Wed milestone (sign+verify xanh),
+  # Thu (SLSA v1.1 Build L1 provenance attestation)
+  # ----------------------------------------------------------------
+  build-sign:
+    name: Build + Sign (Cosign keyless)
+    # Chi chay tren push main / workflow_dispatch — PR khong day image.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # day image + signature len GHCR
+      id-token: write # cosign keyless can OIDC token cua workflow
+    outputs:
+      image: ${{ steps.ref.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record build start time (cho provenance)
+        run: echo "BUILD_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          # provenance: false — ta tu tao SLSA v1.1 provenance va attach bang
+          # cosign attest (xuoi chuan SLSA + verify duoc bang verify-attestation).
+          # Attestation mac dinh cua buildx la SLSA v0.2 (cu) nen ta tat di.
+          provenance: false
+          tags: ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+
+      - name: Export image ref
+        id: ref
+        run: |
+          echo "image=ghcr.io/${{ github.repository }}" >> "$GITHUB_OUTPUT"
+          echo "IMAGE=ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_ENV"
+
+      - uses: sigstore/cosign-installer@v3
+
+      # Ky theo DIGEST (khong ky theo tag — tag mutable co the bi re-point).
+      # Keyless: cert identity = chinh workflow nay, khong can quan ly key.
+      - name: Cosign - sign image (keyless)
+        run: cosign sign --yes "$IMAGE"
+
+      - name: Generate SLSA v1.1 provenance
+        run: .github/scripts/generate_provenance.sh "$IMAGE" "$BUILD_STARTED"
+
+      # Attach provenance vao image (in-toto attestation, DSSE, keyless).
+      # --type slsaprovenance1 = predicate https://slsa.dev/provenance/v1
+      # (cosign validate schema; da xem source attestation.go cua cosign).
+      - name: Cosign - attest SLSA v1.1 provenance
+        run: cosign attest --yes --type slsaprovenance1 \
+          --predicate slsa-provenance.json "$IMAGE"
+
+      - name: Upload provenance (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: slsa-provenance
+          path: slsa-provenance.json
+
+  # ----------------------------------------------------------------
+  # Stage 3 (tiep) — Verify signature + provenance trong CI
+  # Week 3: Tue "Verify signature with cosign verify in CI"
+  # ----------------------------------------------------------------
+  verify:
+    name: Verify (cosign verify + attestation)
+    needs: build-sign
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read # doc signature/attestation tu GHCR
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sigstore/cosign-installer@v3
+
+      # Chi chap nhan chu ky tuoi tu chinh workflow security.yml cua repo nay
+      # (chan image bi ky boi workflow/nguoi khac roi doi ten tag).
+      - name: Cosign - verify image signature
+        run: |
+          cosign verify \
+            --certificate-identity-regexp '^https://github\.com/zahardlazy/securepipe-demo/\.github/workflows/security\.yml@.*$' \
+            --certificate-oidc-issuer https://token\.actions\.githubusercontent\.com \
+          "${{ needs.build-sign.outputs.image }}@${{ needs.build-sign.outputs.digest }}"
+
+      - name: Cosign - verify SLSA v1.1 provenance attestation
+        run: |
+          cosign verify-attestation \
+            --type slsaprovenance1 \
+            --certificate-identity-regexp '^https://github\.com/zahardlazy/securepipe-demo/\.github/workflows/security\.yml@.*$' \
+            --certificate-oidc-issuer https://token\.actions\.githubusercontent\.com \
+            "${{ needs.build-sign.outputs.image }}@${{ needs.build-sign.outputs.digest }}" \
+            | tee attestation-verified.json
+
+      # Bang chung "provenance attached to build" (task Thu): tai attestation
+      # xuong de doi chieu trong demo / Sprint review.
+      - name: Upload verified attestation (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation-verified
+          path: attestation-verified.json
+
+  # ----------------------------------------------------------------
+  # SECURITY QUALITY GATE — Week 3: Thu (thresholds) + Fri (logic)
+  # "Pipeline fails build when a Critical finding exists"
+  # ----------------------------------------------------------------
+  quality-gate:
+    name: Security Quality Gate (Critical = fail)
+    needs: [gitleaks, trufflehog, semgrep, trivy, checkov]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Trivy results
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-results-json
+      - name: Download Semgrep results
+        uses: actions/download-artifact@v4
+        with:
+          name: semgrep-results-json
+
+      # Nguong + ly do tung cap do: docs/quality-gate.md
+      - name: Evaluate Quality Gate
+        run: |
+          python3 .github/scripts/quality_gate.py \
+            --trivy trivy-results.json \
+            --semgrep semgrep-results.json \
+            --baseline docs/accepted-findings.json
