@@ -324,8 +324,12 @@ jobs:
       # --type slsaprovenance1 = predicate https://slsa.dev/provenance/v1
       # (cosign validate schema; da xem source attestation.go cua cosign).
       - name: Cosign - attest SLSA v1.1 provenance
-        run: cosign attest --yes --type slsaprovenance1 \
-          --predicate slsa-provenance.json "$IMAGE"
+        # BLOCK SCALAR (run: |) BAT BUOC: plain scalar bi YAML fold thanh 1
+        # dong, '\\ <flag>' thanh mot tham so ' --predicate' -> cosign khong
+        # nhan duoc flag (loi run 38923593257 tren main 17/10).
+        run: |
+          cosign attest --yes --type slsaprovenance1 \
+            --predicate slsa-provenance.json "$IMAGE"
 
       - name: Upload provenance (artifact)
         uses: actions/upload-artifact@v4
@@ -366,6 +370,9 @@ jobs:
 
       - name: Cosign - verify SLSA v1.1 provenance attestation
         run: |
+          # pipefail: runner dung 'bash -e' (KHONG co pipefail) — thieu dong
+          # nay thi cosign fail nhung 'tee' exit 0 -> step xanh OAN.
+          set -o pipefail
           cosign verify-attestation \
             --type slsaprovenance1 \
             --certificate-identity-regexp '^https://github\.com/zahardlazy/securepipe-demo/\.github/workflows/security\.yml@.*$' \
