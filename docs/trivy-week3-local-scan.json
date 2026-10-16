@@ -1,0 +1,157 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.0"
+  },
+  "ReportID": "01a144dc-239e-7771-9871-3ad5d23b1aea",
+  "CreatedAt": "2026-10-16T13:17:20.15848907Z",
+  "ArtifactID": "sha256:760fac3ca7a3b067a202631f60cabf4c478b04af605f80641304d0876997d977",
+  "ArtifactName": ".",
+  "ArtifactType": "repository",
+  "Metadata": {
+    "RepoURL": "https://github.com/zahardlazy/securepipe-demo.git",
+    "Branch": "feat/mlo-week3-security",
+    "Commit": "21ebe7b9a317b37fecc73f3c5201cb300424fb7a",
+    "CommitMsg": "Merge pull request #18 from zahardlazy/feat/build-image\n\nfeat: add image build + smoke test workflow (Stage 3)",
+    "Author": "Mlô Tây Nguyên \u003c163530269+zahardlazy@users.noreply.github.com\u003e",
+    "Committer": "GitHub \u003cnoreply@github.com\u003e"
+  },
+  "Results": [
+    {
+      "Target": "requirements.txt",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Packages": [
+        {
+          "Name": "flask",
+          "Identifier": {
+            "PURL": "pkg:pypi/flask@3.0.3",
+            "UID": "2f6ebe36676ebe6a"
+          },
+          "Version": "3.0.3",
+          "Locations": [
+            {
+              "StartLine": 1,
+              "EndLine": 1
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "requests",
+          "Identifier": {
+            "PURL": "pkg:pypi/requests@2.19.1",
+            "UID": "c17d48c935a20493"
+          },
+          "Version": "2.19.1",
+          "Locations": [
+            {
+              "StartLine": 4,
+              "EndLine": 4
+            }
+          ],
+          "AnalyzedBy": "pip"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2018-18074",
+          "VendorIDs": [
+            "GHSA-x84v-xcm2-53pg"
+          ],
+          "PkgName": "requests",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/requests@2.19.1",
+            "UID": "c17d48c935a20493"
+          },
+          "InstalledVersion": "2.19.1",
+          "FixedVersion": "2.20.0",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2018-18074",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Fingerprint": "sha256:8d4d5270c892b2ccc5c2e3a2d6ff49042b27eb5e04114954e7cb5079af07ff29",
+          "Title": "python-requests: Redirect from HTTPS to HTTP does not remove Authorization header",
+          "Description": "The Requests package before 2.20.0 for Python sends an HTTP Authorization header to an http URI upon receiving a same-hostname https-to-http redirect, which makes it easier for remote attackers to discover credentials by sniffing the network.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-522"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "ghsa": 3,
+            "nvd": 3,
+            "oracle-oval": 2,
+            "photon": 3,
+            "redhat": 1,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            },
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N",
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V2Score": 5,
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:A/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:N",
+              "V3Score": 2.6
+            }
+          },
+          "References": [
+            "http://docs.python-requests.org/en/master/community/updates/#release-and-version-history",
+            "http://lists.opensuse.org/opensuse-security-announce/2019-07/msg00024.html",
+            "https://access.redhat.com/errata/RHSA-2019:2035",
+            "https://access.redhat.com/security/cve/CVE-2018-18074",
+            "https://bugs.debian.org/910766",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1643829",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1649153",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1659551",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1700824",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1702473",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1740347",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1749839",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=1762422",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-18074",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-20060",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-20852",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11236",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11324",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-16056",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-16935",
+            "https://errata.almalinux.org/8/ALSA-2020-1605.html",
+            "https://errata.rockylinux.org/RLSA-2020:1605",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/requests/PYSEC-2018-28.yaml",
+            "https://github.com/requests/requests",
+            "https://github.com/requests/requests/commit/c45d7c49ea75133e52ab22a8e9e13173938e36ff",
+            "https://github.com/requests/requests/issues/4716",
+            "https://github.com/requests/requests/pull/4718",
+            "https://linux.oracle.com/cve/CVE-2018-18074.html",
+            "https://linux.oracle.com/errata/ELSA-2020-2081.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2018-18074",
+            "https://ubuntu.com/security/notices/USN-3790-1",
+            "https://ubuntu.com/security/notices/USN-3790-2",
+            "https://usn.ubuntu.com/3790-1",
+            "https://usn.ubuntu.com/3790-1/",
+            "https://usn.ubuntu.com/3790-2",
+            "https://usn.ubuntu.com/3790-2/",
+            "https://www.cve.org/CVERecord?id=CVE-2018-18074",
+            "https://www.oracle.com/security-alerts/cpujul2022.html"
+          ],
+          "PublishedDate": "2018-10-09T17:29:01.897Z",
+          "LastModifiedDate": "2026-06-17T01:46:44.62Z"
+        }
+      ]
+    }
+  ]
+}
