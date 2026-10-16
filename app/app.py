@@ -1,4 +1,4 @@
-﻿"""
+"""
 SecurePipe Demo App - minimal Flask app with INTENTIONAL security issues.
 All secrets here are AWS PUBLIC example keys (safe, non-functional).
 """
